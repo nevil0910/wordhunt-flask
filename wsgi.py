@@ -1,4 +1,4 @@
-from app import app, db
+from app import app, db, User, Score
 import os
 import time
 import logging
@@ -15,7 +15,6 @@ def setup_database():
             db.create_all()
             
             # Verify the tables were created
-            from app import User, Score
             table_names = db.inspect(db.engine).get_table_names()
             
             logger.info(f"Current tables in database: {table_names}")

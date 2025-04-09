@@ -18,11 +18,15 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
 
-# Set database path to a persisted location on Render, or use the default location locally
+# Set database path to a location accessible to the application
 if os.environ.get('RENDER'):
-    # On Render, use a directory that's persisted
-    db_path = os.path.join('/data', 'wordhunt.db')
-    os.makedirs('/data', exist_ok=True)
+    # On Render, use a directory within the app's file system
+    # Get the project directory (should be writable)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(base_dir, 'instance')
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, 'wordhunt.db')
+    print(f"Using database at: {db_path}")
 else:
     # Locally, use the current directory
     db_path = 'wordhunt.db'
