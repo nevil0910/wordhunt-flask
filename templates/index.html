@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}WordHunt - Home{% endblock %}
+
+{% block content %}
+<div class="container index-container">
+    <h1>Welcome to WordHunt!</h1>
+    <p class="author-tag">By Nevil Vavadiya</p> 
+
+    <div class="menu home-menu">
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('mode') }}" class="btn btn-primary">Start Game</a>
+            <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">Leaderboard</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+            <a href="{{ url_for('signup') }}" class="btn btn-secondary">Sign Up</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

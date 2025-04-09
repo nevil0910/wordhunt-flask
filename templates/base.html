@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WordHunt{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <header class="main-header">
+        <div class="header-content">
+            <a href="{{ url_for('index') }}" class="header-logo">WordHunt</a>
+            <nav class="main-nav">
+                {% if current_user.is_authenticated %}
+                    <div class="profile-nav">
+                         <span class="profile-greeting">Hi, {{ current_user.username }}</span>
+                        <div class="profile-icon-small">{{ current_user.username[0]|upper }}</div>
+                        <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+                    <a href="{{ url_for('signup') }}" class="nav-link">Sign Up</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="content-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="main-footer">
+        <p>&copy; {{ now.year }} WordHunt Game. All rights reserved.</p>
+        
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

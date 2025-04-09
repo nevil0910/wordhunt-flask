@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Over - WordHunt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='score.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container score-container">
+    <h1>Game Over!</h1>
+    <h2>{{ mode|capitalize }} Mode</h2>
+
+    {# Flash messages are in base.html #}
+    
+    <div class="score-details">
+        <p>Your final score: <span class="final-score">{{ score }}</span></p>
+        <p>Words found: <span class="words-found">{{ words_found }}</span></p>
+        {# Display top score for this mode if available #}
+        {% if top_score %}
+            <p>Your best score in {{ mode|capitalize }} mode: <span class="top-score">{{ top_score }}</span></p>
+        {% endif %}
+    </div>
+
+    <div class="menu score-menu">
+        <a href="{{ url_for('game_route', mode=mode) }}" class="btn play-again">Play Again ({{ mode|capitalize }})</a>
+        <a href="{{ url_for('mode') }}" class="btn btn-secondary">Change Mode</a>
+        <a href="{{ url_for('leaderboard') }}" class="btn leaderboard">View Leaderboards</a>
+        <a href="{{ url_for('index') }}" class="btn home">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

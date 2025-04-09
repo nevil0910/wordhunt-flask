@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Mode - WordHunt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='mode.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="mode-selection-container">
+    <h1>Choose Your Challenge</h1>
+    <p class="mode-description">Select a difficulty level to start playing WordHunt!</p>
+    <div class="mode-options">
+        <a href="{{ url_for('game_route', mode='easy') }}" class="mode-button easy-mode">
+            <span class="mode-icon"></span> Easy
+        </a>
+        <a href="{{ url_for('game_route', mode='normal') }}" class="mode-button normal-mode">
+             <span class="mode-icon"></span> Normal
+        </a>
+        <a href="{{ url_for('game_route', mode='hard') }}" class="mode-button hard-mode">
+             <span class="mode-icon"></span> Hard
+        </a>
+    </div>
+     <div class="menu back-menu">
+        {# Back button removed, use header link or browser back #}
+        {# <button onclick="location.href='/'">Back to Home</button> #}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}WordHunt - {{ mode|capitalize }} Mode{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <h1 class="title">WordHunt - {{ mode|capitalize }} Mode</h1>
+
+    <div class="game-layout">
+        <div class="grid-area">
+            <div class="grid-container">
+                <svg id="svgContainer" class="line-container"></svg>
+                <table class="word-grid">
+                    <tbody>
+                        {% for row_index in range(grid|length) %}
+                        <tr>
+                            {% for col_index in range(grid[0]|length) %}
+                            <td data-x="{{ col_index }}" data-y="{{ row_index }}"
+                                data-letter="{{ grid[row_index][col_index] if col_index < grid[row_index]|length else '' }}">
+                                {{ grid[row_index][col_index] if col_index < grid[row_index]|length else '' }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="info-area">
+            <div class="game-stats">
+                <div class="score-display">
+                    <h3>Score: <span id="current-score">0</span></h3>
+                </div>
+                <div class="timer-display">
+                    <h3>Time Left: <span id="timer">0</span>s</h3>
+                </div>
+            </div>
+
+            <div class="word-list">
+                <h3>Find these words:</h3>
+                <ul>
+                    {% for word in words %}
+                    <li>{{ word }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div id="controls-container" class="game-controls">
+                <button id="new-game-button" class="btn">New Game</button>
+            </div>
+            <div class="menu game-menu">
+                <a href="{{ url_for('mode') }}" class="btn btn-secondary">Back to Modes</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let initialWords = {{ words | tojson | safe }};
+    window.validWords = new Set(initialWords);
+    window.gameMode = "{{ mode }}";
+</script>
+<script src="{{ url_for('static', filename='game.js') }}"></script>
+{% endblock %}

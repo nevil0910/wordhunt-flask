@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboards - WordHunt{% endblock %}
+
+{% block body_class %}leaderboard-page{% endblock %}
+
+{% block content %}
+<div class="container leaderboard-container">
+    <h1>WordHunt Champions</h1>
+    
+    {# Flash messages are in base.html #}
+
+    {% for mode, scores in leaderboards.items() %}
+    <div class="leaderboard-section">
+        <h2>{{ mode.capitalize() }} Mode</h2>
+        <div class="leaderboard-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                        <th>Words Found</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in scores %}
+                    <tr>
+                        <td>{{ score.rank }}</td>
+                        <td>{{ score.username }}</td>
+                        <td>{{ score.score }}</td>
+                        <td>{{ score.words_found }}</td>
+                        <td>{{ score.date }}</td> {# Date is already formatted string #}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="no-data">No scores yet for {{ mode }} mode!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="menu">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Home</a>
+        <a href="{{ url_for('mode') }}" class="btn">Play Again</a>
+    </div>
+</div>
+{% endblock %}
