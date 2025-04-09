@@ -15,9 +15,9 @@ let timeLeft;
 // Set initial time based on game difficulty
 function setInitialTime() {
     if (gameMode === "easy") {
-        timeLeft = 30;
+        timeLeft = 20;
     } else if (gameMode === "normal") {
-        timeLeft = 120;
+        timeLeft = 100;
     } else if (gameMode === "hard") {
         timeLeft = 240;
     } else {

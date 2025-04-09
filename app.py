@@ -18,21 +18,38 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
 
-# Set database path to a location accessible to the application
-if os.environ.get('RENDER'):
-    # On Render, use a directory within the app's file system
-    # Get the project directory (should be writable)
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, 'instance')
-    os.makedirs(data_dir, exist_ok=True)
-    db_path = os.path.join(data_dir, 'wordhunt.db')
-    print(f"Using database at: {db_path}")
-else:
-    # Locally, use the current directory
-    db_path = 'wordhunt.db'
+# Set up database connection
+database_url = os.getenv('DATABASE_URL')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{db_path}')
+# If a database URL is provided, use it (for PostgreSQL)
+if database_url:
+    # Fix for Render's PostgreSQL URLs that start with postgres://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    print(f"Using external database: PostgreSQL")
+else:
+    # If no database URL provided, use SQLite for local development
+    if os.environ.get('RENDER'):
+        # On Render without DATABASE_URL, use a directory within the app's file system
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(base_dir, 'instance')
+        os.makedirs(data_dir, exist_ok=True)
+        db_path = os.path.join(data_dir, 'wordhunt.db')
+        print(f"Using database at: {db_path}")
+    else:
+        # Locally, use the current directory
+        db_path = 'wordhunt.db'
+        
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"Using SQLite database at: {app.config['SQLALCHEMY_DATABASE_URI']}")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,  # Test connection before use to avoid "server closed the connection unexpectedly"
+    'pool_recycle': 300,    # Recycle connections every 5 minutes
+}
 
 
 db = SQLAlchemy(app)

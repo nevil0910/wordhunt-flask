@@ -96,6 +96,39 @@ Note that with Render's free tier, the disk is ephemeral, meaning your database 
 - For low-to-medium traffic, SQLite can handle the load well
 - For higher traffic, consider migrating to PostgreSQL or MySQL
 
+## Using a PostgreSQL Database (Recommended for Production)
+
+To use an external PostgreSQL database with WordHunt (which will persist data even when your Render service spins down):
+
+1. Create a free PostgreSQL database:
+   - [Supabase](https://supabase.com/) - 500MB free database
+   - [Neon](https://neon.tech/) - 3GB free database
+   - [ElephantSQL](https://www.elephantsql.com/) - 20MB free database (Tiny Turtle plan)
+
+2. Get your PostgreSQL connection string, which will look like:
+   ```
+   postgresql://username:password@hostname:port/database
+   ```
+
+3. Add the connection string to your `.env` file:
+   ```
+   DATABASE_URL=postgresql://username:password@hostname:port/database
+   ```
+
+4. If deploying on Render, add the `DATABASE_URL` as an environment variable in your service settings.
+
+5. To migrate existing data from SQLite to PostgreSQL:
+   ```
+   python migrate_to_postgres.py
+   ```
+
+6. Restart your application:
+   ```
+   python app.py
+   ```
+
+The application will automatically detect the PostgreSQL database URL and use it instead of SQLite.
+
 ## Game Instructions
 
 1. Register an account and verify your email
