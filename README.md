@@ -72,9 +72,23 @@ gunicorn wsgi:app
 1. Push your code to GitHub
 2. Create a new Web Service in Render
 3. Connect to your GitHub repository
-4. Set the build command: `pip install -r requirements.txt`
-5. Set the start command: `gunicorn wsgi:app`
-6. Add the necessary environment variables (SECRET_KEY, MAIL settings, etc.)
+4. Set the build command: `pip install -r requirements.txt && chmod +x setup_db.sh`
+5. Set the start command: `./setup_db.sh && gunicorn wsgi:app`
+6. Set the following environment variables:
+   ```
+   SECRET_KEY=your_secure_random_key
+   MAIL_SERVER=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USE_TLS=True
+   MAIL_USERNAME=your_email@gmail.com
+   MAIL_PASSWORD=your_app_password
+   RENDER=true
+   ```
+7. Under "Advanced" settings:
+   - Enable "Persistent Disk" with at least 1GB of storage (this is where SQLite will store your database)
+   - Set the "Persistent Path" to `/data`
+
+This configuration ensures that your SQLite database will be stored in Render's persistent disk storage, which will keep your data between deployments and service restarts.
 
 ### Important Notes for SQLite in Production
 

@@ -17,7 +17,17 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///wordhunt.db')
+
+# Set database path to a persisted location on Render, or use the default location locally
+if os.environ.get('RENDER'):
+    # On Render, use a directory that's persisted
+    db_path = os.path.join('/data', 'wordhunt.db')
+    os.makedirs('/data', exist_ok=True)
+else:
+    # Locally, use the current directory
+    db_path = 'wordhunt.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{db_path}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
