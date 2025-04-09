@@ -1,1 +1,1 @@
-web: gunicorn wsgi:app 
+web: chmod +x setup_db.sh && ./setup_db.sh && python init_db.py && gunicorn app:app 

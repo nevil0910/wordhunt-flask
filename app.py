@@ -89,6 +89,7 @@ def send_email(subject, recipient, plain_body, html_body):
 
 # User model
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     username = db.Column(db.String(100), nullable=False)
@@ -99,12 +100,25 @@ class User(UserMixin, db.Model):
 
 # Score model for leaderboard
 class Score(db.Model):
+    __tablename__ = 'score'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
     mode = db.Column(db.String(20), nullable=False)
     words_found = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Initialize database
+with app.app_context():
+    try:
+        # Create tables if they don't exist
+        db.create_all()
+        print("Database tables created successfully")
+        # Check which tables were created
+        table_names = db.inspect(db.engine).get_table_names()
+        print(f"Tables in database: {table_names}")
+    except Exception as e:
+        print(f"Error creating database tables: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):

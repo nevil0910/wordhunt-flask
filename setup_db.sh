@@ -30,9 +30,9 @@ fi
 # Run a Python script to initialize the database
 echo "Initializing database schema..."
 python <<EOF
-from app import app, db
-# Import all models directly from app
-from app import User, Score
+import os
+os.environ['RENDER'] = 'true'
+from app import app, db, User, Score
 
 with app.app_context():
     db.create_all()
@@ -41,6 +41,19 @@ with app.app_context():
     # Print table names
     table_names = db.inspect(db.engine).get_table_names()
     print(f"Tables in database: {table_names}")
+    
+    # Verify User table exists
+    if 'user' not in table_names:
+        print("WARNING: user table not found, trying explicit creation")
+        db.metadata.tables['user'].create(db.engine)
+    
+    # Check again
+    table_names = db.inspect(db.engine).get_table_names()
+    print(f"Final tables in database: {table_names}")
 EOF
 
+# Verify database file exists and has content
+echo "Database file status:"
+ls -la "${DB_FILE}" || echo "Database file not found!"
+file "${DB_FILE}" || echo "Could not check file type"
 echo "Database setup completed" 
