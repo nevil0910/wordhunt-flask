@@ -1,12 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from flask_session import Session  # For server-side sessions
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 import game
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy import func
 from dotenv import load_dotenv
 import smtplib
@@ -17,60 +16,15 @@ from email.mime.multipart import MIMEMultipart
 load_dotenv()
 
 app = Flask(__name__)
-# Stronger secret key for production
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
-
-# Configure session to use server-side storage for better security
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SESSION_FILE_DIR'] = os.getenv('SESSION_FILE_DIR', os.path.join(os.getcwd(), 'flask_session'))
-app.config['SESSION_USE_SIGNER'] = True
-
-# Initialize Flask-Session
-Session(app)
-
-# Update PostgreSQL URI for Render deployment
-database_url = os.getenv('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///wordhunt.db'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///wordhunt.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,  # Test connection before use
-    'pool_recycle': 300,    # Recycle connections every 5 minutes
-    'connect_args': {'connect_timeout': 15}  # 15 seconds connection timeout
-}
-
-# Configure session cookie for production
-if not app.debug:
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    
-    # Enable SSL for session cookie in production
-    from werkzeug.middleware.proxy_fix import ProxyFix
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Create a model for storing game state
-class GameState(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    mode = db.Column(db.String(20), nullable=False)
-    grid = db.Column(db.JSON, nullable=False)
-    words = db.Column(db.JSON, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Automatically remove old game states
-    __table_args__ = (
-        db.Index('idx_game_state_user_id', 'user_id'),
-    )
 
 @app.context_processor
 def inject_now():
@@ -117,6 +71,7 @@ def send_email(subject, recipient, plain_body, html_body):
     except Exception as e:
         print(f"Error sending multipart email to {recipient}: {e}")
         return False
+# --- End Email Sending Function ---
 
 # User model
 class User(UserMixin, db.Model):
@@ -127,7 +82,6 @@ class User(UserMixin, db.Model):
     otp = db.Column(db.String(6), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     scores = db.relationship('Score', backref='user', lazy=True)
-    game_states = db.relationship('GameState', backref='user', lazy=True, cascade='all, delete-orphan')
 
 # Score model for leaderboard
 class Score(db.Model):
@@ -137,28 +91,10 @@ class Score(db.Model):
     mode = db.Column(db.String(20), nullable=False)
     words_found = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    __table_args__ = (
-        db.Index('idx_score_user_id', 'user_id'),
-        db.Index('idx_score_mode', 'mode'),
-    )
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-# Clean up old game states - run periodically
-def cleanup_old_game_states():
-    try:
-        cutoff_time = datetime.utcnow() - timedelta(days=1)
-        old_states = GameState.query.filter(GameState.created_at < cutoff_time).all()
-        for state in old_states:
-            db.session.delete(state)
-        db.session.commit()
-        print(f"Cleaned up {len(old_states)} old game states")
-    except Exception as e:
-        print(f"Error cleaning up old game states: {e}")
-        db.session.rollback()
 
 @app.route('/')
 def index():
@@ -448,35 +384,10 @@ def mode():
 def game_route():
     mode = request.args.get('mode', 'easy')
     grid, words = game.create_word_grid(mode)
-    
-    # Store game state in database instead of session
-    try:
-        # First clean up any existing game state for this user
-        existing_state = GameState.query.filter_by(user_id=current_user.id).first()
-        if existing_state:
-            db.session.delete(existing_state)
-            
-        # Create new game state
-        game_state = GameState(
-            user_id=current_user.id,
-            mode=mode,
-            grid=grid,
-            words=words
-        )
-        db.session.add(game_state)
-        db.session.commit()
-        
-    except Exception as e:
-        print(f"Error saving game state: {e}")
-        db.session.rollback()
-    
-    # Store just the mode in session
-    session['current_game_mode'] = mode
-    
-    # Clean up previous game scores
+    session['current_game_mode'] = mode # Store mode in session
+    # Clear previous game score from session if any
     session.pop('last_game_score', None)
     session.pop('last_game_mode', None)
-    
     return render_template("game.html", mode=mode, grid=grid, words=words)
 
 @app.route('/new-grid')
@@ -486,26 +397,8 @@ def new_grid():
     mode = session.get('current_game_mode', 'easy') 
     try:
         grid, words = game.create_word_grid(mode)
-        
-        # Update game state in database
-        existing_state = GameState.query.filter_by(user_id=current_user.id).first()
-        if existing_state:
-            existing_state.grid = grid
-            existing_state.words = words
-            existing_state.created_at = datetime.utcnow()
-        else:
-            game_state = GameState(
-                user_id=current_user.id,
-                mode=mode,
-                grid=grid,
-                words=words
-            )
-            db.session.add(game_state)
-        
-        db.session.commit()
         return jsonify({'grid': grid, 'words': words})
     except Exception as e:
-        db.session.rollback()
         print(f"Error generating new grid for mode {mode}: {e}")
         return jsonify({'error': 'Failed to generate new grid'}), 500
 
@@ -515,13 +408,7 @@ def end_game():
     try:
         data = request.get_json()
         final_score = data.get('score')
-        
-        # Get mode from database
-        game_state = GameState.query.filter_by(user_id=current_user.id).first()
-        if game_state:
-            mode = game_state.mode
-        else:
-            mode = session.get('current_game_mode', 'unknown')
+        mode = session.get('current_game_mode', 'unknown') # Get mode from session
 
         if final_score is None:
             return jsonify({'error': 'Missing score data'}), 400
@@ -529,18 +416,12 @@ def end_game():
         # Store score and mode in session for the score page
         session['last_game_score'] = int(final_score)
         session['last_game_mode'] = mode
-        
-        # Clean up game state from session and database
-        session.pop('current_game_mode', None)
-        if game_state:
-            db.session.delete(game_state)
-            db.session.commit()
+        session.pop('current_game_mode', None) # Clear current game mode
 
-        print(f"Game ended. Mode: {mode}, Score: {final_score}. Stored in session.")
+        print(f"Game ended. Mode: {mode}, Score: {final_score}. Stored in session.") # Server log
         return jsonify({'message': 'Score received'}), 200
     except Exception as e:
         print(f"Error in /end-game: {e}")
-        db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/score')
@@ -612,18 +493,6 @@ def leaderboard():
         leaderboards[mode] = scores_data
         
     return render_template('leaderboard.html', leaderboards=leaderboards)
-
-# Schedule periodic cleanup
-if not app.debug:
-    import atexit
-    from apscheduler.schedulers.background import BackgroundScheduler
-    
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=cleanup_old_game_states, trigger="interval", hours=12)
-    scheduler.start()
-    
-    # Register the function to be called on exit
-    atexit.register(lambda: scheduler.shutdown())
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,6 +1,6 @@
 # WordHunt Game
 
-A word search game built with Flask that can be deployed on Render.
+A word search game built with Flask that runs with SQLite database.
 
 ## Features
 
@@ -9,51 +9,90 @@ A word search game built with Flask that can be deployed on Render.
 - Email verification for account security
 - Responsive design for desktop and mobile play
 
-## Deployment to Render
+## Local Development Setup
 
-### Automatic Deployment
+1. Clone the repository:
+```
+git clone https://github.com/yourusername/wordhunt.git
+cd wordhunt
+```
 
-1. Fork this repository to your GitHub account
-2. Sign up for a [Render](https://render.com/) account
-3. Create a new "Blueprint" in Render and connect to your GitHub repository
-4. Render will automatically detect the `render.yaml` configuration file and deploy the service and database
+2. Create a virtual environment:
+```
+python -m venv venv
+```
 
-### Manual Deployment
-
-1. Create a new Web Service in Render
-2. Connect your GitHub repository
-3. Configure the following settings:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn wsgi:app`
-   - Python Version: 3.9
-4. Add the following environment variables:
-   - `SECRET_KEY`: Generate a random secure string
-   - `DATABASE_URL`: Your PostgreSQL database URL (Render will provide this if you create a PostgreSQL database)
-   - For email functionality:
-     - `MAIL_USERNAME`: Your email username
-     - `MAIL_PASSWORD`: Your email password or app password
-     - `MAIL_SERVER`: SMTP server (default: smtp.gmail.com)
-     - `MAIL_PORT`: SMTP port (default: 587)
-     - `MAIL_USE_TLS`: True or False
-
-## Local Development
-
-1. Clone the repository
-2. Create a virtual environment: `python -m venv venv`
 3. Activate the virtual environment:
    - Windows: `venv\Scripts\activate`
-   - Linux/Mac: `source venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Create a `.env` file with the necessary environment variables
-6. Run the application: `python wsgi.py`
+   - macOS/Linux: `source venv/bin/activate`
 
-## Database Migrations
+4. Install dependencies:
+```
+pip install -r requirements.txt
+```
 
-When making changes to the database models:
+5. Create a `.env` file in the root directory with these settings:
+```
+SECRET_KEY=your_secret_key_here
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_email_password
+```
 
-1. Initialize migrations if not already done: `flask db init`
-2. Create a migration: `flask db migrate -m "Description of changes"`
-3. Apply the migration: `flask db upgrade`
+For Gmail users, you'll need to:
+1. Enable 2-Factor Authentication in your Google account
+2. Create an App Password specifically for this application
+3. Use that App Password in the `.env` file
+
+6. Run the application:
+```
+python app.py
+```
+
+7. Access the application in your browser at http://localhost:5000
+
+## Deployment with SQLite
+
+You can deploy this application with the existing SQLite database. Here are instructions for different platforms:
+
+### Deployment to a VPS or Dedicated Server
+
+1. Transfer your code to the server (using Git, SCP, or SFTP)
+2. Install Python and required dependencies
+3. Set up your environment variables in a `.env` file
+4. Run the application with Gunicorn:
+```
+gunicorn wsgi:app
+```
+
+### Deployment to Render
+
+1. Push your code to GitHub
+2. Create a new Web Service in Render
+3. Connect to your GitHub repository
+4. Set the build command: `pip install -r requirements.txt`
+5. Set the start command: `gunicorn wsgi:app`
+6. Add the necessary environment variables (SECRET_KEY, MAIL settings, etc.)
+
+### Important Notes for SQLite in Production
+
+- SQLite is file-based, so your database will be stored in the file system
+- Make sure your deployment platform persists the database file
+- For low-to-medium traffic, SQLite can handle the load well
+- For higher traffic, consider migrating to PostgreSQL or MySQL
+
+## Game Instructions
+
+1. Register an account and verify your email
+2. Log in to your account
+3. Choose a difficulty level:
+   - Easy: 5x5 grid with 3-4 letter words
+   - Normal: 10x10 grid with 6-7 letter words
+   - Hard: 15x15 grid with 8-10 letter words
+4. Find words in the grid by clicking and dragging
+5. Try to find all hidden words to maximize your score!
 
 ## License
 
