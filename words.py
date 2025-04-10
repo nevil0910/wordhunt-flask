@@ -103,7 +103,7 @@ easy_words = [
  "keep", "rip", "pix", "toll", "lou", "ata", "guys", "deal", "jar", "tba", "chef", "bent", "born", "are", 
  "six", "mood", "doc", "box", "ford", "dome", "same", "dog", "lat", "kurt", "date", "loop", "pot", "oil", 
  "row", "erik", "luck", "jul", "acts", "away", "gig", "ago", "ind", "dead", "mba", "will", "sad",
- ]
+]
 
 normal_words = [
  "compile", "mercury", "rebates", "reforms", "babies", "builder", "tactics", "eternal", "luxury", "concert", 

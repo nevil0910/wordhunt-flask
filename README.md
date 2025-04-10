@@ -1,20 +1,31 @@
 # WordHunt Game
 
-A word search game built with Flask that runs with SQLite database.
+A word search puzzle game built with Python Flask, featuring multiple difficulty levels and user authentication.
+
+## Live Demo
+
+**The project is deployed on Render until May 8, 2025.**
+
+🔗 **Play Now**: [https://wordhunt-game.onrender.com/](https://wordhunt-game.onrender.com/)
+
+> **Note**: The game currently has compatibility issues with mobile devices. The SVG line drawing feature for word selection does not work properly on mobile browsers. For the best experience, please use a desktop browser.
 
 ## Features
 
-- Multiple difficulty levels: Easy, Normal, and Hard
-- User authentication and leaderboards
-- Email verification for account security
-- Responsive design for desktop and mobile play
+- **Multiple Difficulty Levels**: 
+  - Easy (5×5 grid, shorter words)
+  - Normal (10×10 grid, medium words)
+  - Hard (15×15 grid, longer words)
+- **User System**: Secure authentication with email verification
+- **Leaderboards**: Track top scores across all difficulty levels
+- **Responsive Design**: Optimized for desktop play.
 
 ## Local Development Setup
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/wordhunt.git
-cd wordhunt
+git clone https://github.com/nevil0910/wordhunt-flask.git
+cd wordhunt-flask
 ```
 
 2. Create a virtual environment:
@@ -31,17 +42,17 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-5. Create a `.env` file in the root directory with these settings:
+5. Create a `.env` file in the root directory:
 ```
 SECRET_KEY=your_secret_key_here
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
 MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_email_password
+MAIL_PASSWORD=your_app_password
 ```
 
-For Gmail users, you'll need to:
+For Gmail users:
 1. Enable 2-Factor Authentication in your Google account
 2. Create an App Password specifically for this application
 3. Use that App Password in the `.env` file
@@ -51,94 +62,72 @@ For Gmail users, you'll need to:
 python app.py
 ```
 
-7. Access the application in your browser at http://localhost:5000
+7. Access the application at http://localhost:5000
 
-## Deployment with SQLite
+## Deployment Options
 
-You can deploy this application with the existing SQLite database. Here are instructions for different platforms:
+### Render Deployment (Current Method)
 
-### Deployment to a VPS or Dedicated Server
-
-1. Transfer your code to the server (using Git, SCP, or SFTP)
-2. Install Python and required dependencies
-3. Set up your environment variables in a `.env` file
-4. Run the application with Gunicorn:
-```
-gunicorn wsgi:app
-```
-
-### Deployment to Render
-
-1. Push your code to GitHub
-2. Create a new Web Service in Render
+1. Fork the repository to your GitHub account
+2. Create a new Web Service on [Render](https://render.com/)
 3. Connect to your GitHub repository
-4. Set the build command: `pip install -r requirements.txt`
-5. Set the start command: `gunicorn wsgi:app`
-6. Set the following environment variables:
-   ```
-   SECRET_KEY=your_secure_random_key
-   MAIL_SERVER=smtp.gmail.com
-   MAIL_PORT=587
-   MAIL_USE_TLS=True
-   MAIL_USERNAME=your_email@gmail.com
-   MAIL_PASSWORD=your_app_password
-   RENDER=true
-   ```
+4. Configure:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `gunicorn wsgi:app`
+   - Environment variables:
+     ```
+     SECRET_KEY=your_secure_random_key
+     MAIL_SERVER=smtp.gmail.com
+     MAIL_PORT=587
+     MAIL_USE_TLS=True
+     MAIL_USERNAME=your_email@gmail.com
+     MAIL_PASSWORD=your_app_password
+     RENDER=true
+     ```
 
-The database will be stored in the `instance` directory within your application, which is automatically created when the application starts. This ensures that your database will be accessible to the application without requiring special permissions.
+### Database Options
 
-Note that with Render's free tier, the disk is ephemeral, meaning your database may be reset when your service is restarted or redeployed. For a production application, consider using Render's paid tier with a persistent disk or migrate to a hosted database service.
+#### SQLite (Default)
+- Automatically used if no external database is configured
+- Stored in the `instance` directory
+- Simple setup but data may be lost on some hosting platforms
 
-### Important Notes for SQLite in Production
+#### PostgreSQL (Recommended for Production)
+1. Create a PostgreSQL database with any provider:
+   - [Supabase](https://supabase.com/) (500MB free)
+   - [Neon](https://neon.tech/) (3GB free)
+   - [ElephantSQL](https://www.elephantsql.com/) (20MB free)
 
-- SQLite is file-based, so your database will be stored in the file system
-- Make sure your deployment platform persists the database file
-- For low-to-medium traffic, SQLite can handle the load well
-- For higher traffic, consider migrating to PostgreSQL or MySQL
-
-## Using a PostgreSQL Database (Recommended for Production)
-
-To use an external PostgreSQL database with WordHunt (which will persist data even when your Render service spins down):
-
-1. Create a free PostgreSQL database:
-   - [Supabase](https://supabase.com/) - 500MB free database
-   - [Neon](https://neon.tech/) - 3GB free database
-   - [ElephantSQL](https://www.elephantsql.com/) - 20MB free database (Tiny Turtle plan)
-
-2. Get your PostgreSQL connection string, which will look like:
-   ```
-   postgresql://username:password@hostname:port/database
-   ```
-
-3. Add the connection string to your `.env` file:
+2. Set your database URL as an environment variable:
    ```
    DATABASE_URL=postgresql://username:password@hostname:port/database
    ```
 
-4. If deploying on Render, add the `DATABASE_URL` as an environment variable in your service settings.
-
-5. To migrate existing data from SQLite to PostgreSQL:
+3. To migrate existing data to PostgreSQL:
    ```
    python migrate_to_postgres.py
    ```
 
-6. Restart your application:
-   ```
-   python app.py
-   ```
-
-The application will automatically detect the PostgreSQL database URL and use it instead of SQLite.
-
-## Game Instructions
+## How to Play
 
 1. Register an account and verify your email
 2. Log in to your account
-3. Choose a difficulty level:
-   - Easy: 5x5 grid with 3-4 letter words
-   - Normal: 10x10 grid with 6-7 letter words
-   - Hard: 15x15 grid with 8-10 letter words
-4. Find words in the grid by clicking and dragging
-5. Try to find all hidden words to maximize your score!
+3. Select your preferred difficulty level
+4. Find words in the grid by clicking and dragging (desktop recommended)
+5. Discover all hidden words before time runs out!
+
+## Known Issues
+
+- SVG line drawing for word selection doesn't work properly on mobile devices
+- For the best gameplay experience, a desktop browser is recommended
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
