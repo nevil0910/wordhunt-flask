@@ -46,11 +46,9 @@ try:
         table_names = db.inspect(db.engine).get_table_names()
         print(f"Tables in database: {table_names}")
         
-        # Try querying the User table to verify it works
         user_count = User.query.count()
         print(f"Number of users in database: {user_count}")
         
-        # Try querying the Score table to verify it works
         score_count = Score.query.count()
         print(f"Number of scores in database: {score_count}")
         
@@ -60,4 +58,4 @@ except Exception as e:
     sys.exit(1)
 
 print("Database setup completed successfully!")
-sys.exit(0) 
+sys.exit(0)

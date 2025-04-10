@@ -42,7 +42,7 @@ def is_valid_placement(grid, word, row, col, direction):
             curr_row -= i
             curr_col -= i
             
-        # Make sure we're still within grid boundaries
+        # Make sure this is still within grid boundaries
         if curr_row < 0 or curr_row >= size or curr_col < 0 or curr_col >= size:
             return False
             
@@ -122,24 +122,20 @@ def place_word(grid, grid_filled, word, mode):
                                     
                                     possible_placements.append((start_row, start_col, direction, crossover_score))
         
-        # If we found valid crossover placements, choose the one with highest score
         if possible_placements:
             possible_placements.sort(key=lambda x: x[3], reverse=True)
             
-            # Increase probability of choosing crossovers as more words are added
-            # Count how many cells are filled
             filled_count = sum(1 for row in grid_filled for cell in row if cell)
             total_cells = size * size
             filled_percentage = filled_count / total_cells
             
-            # Higher crossover probability as the grid fills up
             crossover_probability = max(0.7, min(0.95, 0.7 + filled_percentage))
             
-            if random.random() < crossover_probability:  # Higher chance to choose best crossover
+            if random.random() < crossover_probability:
                 row, col, direction, _ = possible_placements[0]
             else:
                 row, col, direction, _ = random.choice(possible_placements)
-                
+
             # Place the word
             for i in range(len(word)):
                 if direction == "H":
@@ -248,7 +244,7 @@ def place_word(grid, grid_filled, word, mode):
                             grid[row - j][col - j] = "_"
                             grid_filled[row - j][col - j] = False
                     break
-            else:  # This executes if the for loop completes normally (no break)
+            else:
                 return True
             
     print(f"Could not place word: {word} after {max_attempts} attempts")
@@ -287,8 +283,7 @@ def create_word_grid(mode):
     num_words = 5 if mode == "easy" else 8 if mode == "normal" else 12
     selected_words = random.sample(words_list, min(num_words, len(words_list)))
     
-    # Sort words by length (longest first) to prioritize placing longer words
-    # which have more potential crossover points
+    # Sort words by length (longest first) to prioritize placing longer words which have more potential crossover points
     words = sorted(selected_words, key=len, reverse=True)
     
     grid = create_grid(size)

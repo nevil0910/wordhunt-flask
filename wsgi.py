@@ -6,31 +6,24 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Ensure the database tables are created
 def setup_database():
     try:
         logger.info("Checking database and creating tables if they don't exist...")
         with app.app_context():
-            # Try to create tables
             db.create_all()
             
-            # Verify the tables were created
             table_names = db.inspect(db.engine).get_table_names()
             
             logger.info(f"Current tables in database: {table_names}")
             
-            # Check if the user table exists
             if 'user' not in table_names:
                 logger.warning("User table not created. Trying with lowercase model name...")
-                # Sometimes SQLAlchemy uses lowercase model names
                 db.create_all()
                 
-                # Check again
                 table_names = db.inspect(db.engine).get_table_names()
                 logger.info(f"Tables after second attempt: {table_names}")
                 
                 if 'user' not in table_names:
-                    # Try to explicitly create tables for specific models
                     db.metadata.create_all(db.engine)
                     logger.info(f"Final attempt to create tables completed.")
                     
@@ -40,7 +33,6 @@ def setup_database():
         logger.error(f"Error setting up database: {str(e)}")
         return False
 
-# Try setting up the database
 attempts = 0
 max_attempts = 3
 

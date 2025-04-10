@@ -21,25 +21,20 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
 # Set up database connection
 database_url = os.getenv('DATABASE_URL')
 
-# If a database URL is provided, use it (for PostgreSQL)
 if database_url:
-    # Fix for Render's PostgreSQL URLs that start with postgres://
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     print(f"Using external database: PostgreSQL")
 else:
-    # If no database URL provided, use SQLite for local development
     if os.environ.get('RENDER'):
-        # On Render without DATABASE_URL, use a directory within the app's file system
         base_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(base_dir, 'instance')
         os.makedirs(data_dir, exist_ok=True)
         db_path = os.path.join(data_dir, 'wordhunt.db')
         print(f"Using database at: {db_path}")
     else:
-        # Locally, use the current directory
         db_path = 'wordhunt.db'
         
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
@@ -47,8 +42,8 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,  # Test connection before use to avoid "server closed the connection unexpectedly"
-    'pool_recycle': 300,    # Recycle connections every 5 minutes
+    'pool_pre_ping': True,
+    'pool_recycle': 300,    
 }
 
 
@@ -102,7 +97,7 @@ def send_email(subject, recipient, plain_body, html_body):
     except Exception as e:
         print(f"Error sending multipart email to {recipient}: {e}")
         return False
-# --- End Email Sending Function ---
+
 
 # User model
 class User(UserMixin, db.Model):
@@ -128,7 +123,6 @@ class Score(db.Model):
 # Initialize database
 with app.app_context():
     try:
-        # Create tables if they don't exist
         db.create_all()
         print("Database tables created successfully")
         # Check which tables were created
@@ -210,7 +204,6 @@ The WordHunt Team
             # Email failed to send
             print(f"Failed to send signup verification email to {email}")
             flash('Could not send verification email. Please try signing up again or contact support.', 'danger')
-            # Clean up the user created if email fails
             db.session.delete(new_user)
             db.session.commit()
             return redirect(url_for('signup'))
@@ -238,7 +231,6 @@ def verify_email():
             user.otp = None
             db.session.commit()
             
-            # Prepare welcome email content (Optional)
             subject = 'Welcome to WordHunt!'
             plain_body = f'''Hi {user.username},
 
@@ -255,7 +247,6 @@ The WordHunt Team
 <p>You can now <a href="{ url_for('login', _external=True) }">log in</a> and start playing. Challenge yourself with different difficulty levels and compete for the highest scores!</p>
 <p>Happy Gaming!<br>The WordHunt Team</p>
 </body></html>'''
-            # Send welcome email
             send_email(subject, user.email, plain_body, html_body)
             
             session.pop('verification_email', None)
@@ -278,7 +269,6 @@ def login():
                 login_user(user)
                 return redirect(url_for('index'))
             else:
-                # Resend OTP for unverified user
                 otp = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
                 user.otp = otp
                 db.session.commit()
@@ -429,8 +419,7 @@ def mode():
 def game_route():
     mode = request.args.get('mode', 'easy')
     grid, words = game.create_word_grid(mode)
-    session['current_game_mode'] = mode # Store mode in session
-    # Clear previous game score from session if any
+    session['current_game_mode'] = mode
     session.pop('last_game_score', None)
     session.pop('last_game_mode', None)
     return render_template("game.html", mode=mode, grid=grid, words=words)
@@ -438,7 +427,6 @@ def game_route():
 @app.route('/new-grid')
 @login_required
 def new_grid():
-    # Use mode from session if available, else default
     mode = session.get('current_game_mode', 'easy') 
     try:
         grid, words = game.create_word_grid(mode)
@@ -453,17 +441,16 @@ def end_game():
     try:
         data = request.get_json()
         final_score = data.get('score')
-        mode = session.get('current_game_mode', 'unknown') # Get mode from session
+        mode = session.get('current_game_mode', 'unknown')
 
         if final_score is None:
             return jsonify({'error': 'Missing score data'}), 400
         
-        # Store score and mode in session for the score page
         session['last_game_score'] = int(final_score)
         session['last_game_mode'] = mode
-        session.pop('current_game_mode', None) # Clear current game mode
+        session.pop('current_game_mode', None)
 
-        print(f"Game ended. Mode: {mode}, Score: {final_score}. Stored in session.") # Server log
+        print(f"Game ended. Mode: {mode}, Score: {final_score}. Stored in session.")
         return jsonify({'message': 'Score received'}), 200
     except Exception as e:
         print(f"Error in /end-game: {e}")
@@ -472,23 +459,18 @@ def end_game():
 @app.route('/score')
 @login_required
 def score():
-    # Get score and mode from session, not URL parameters
-    score_value = session.pop('last_game_score', 0) # Pop to clear after use
-    mode_value = session.pop('last_game_mode', 'easy') # Pop to clear after use
+    score_value = session.pop('last_game_score', 0)
+    mode_value = session.pop('last_game_mode', 'easy')
     
     if score_value == 0 and mode_value == 'easy':
-        # Avoid showing score page if no score was properly submitted
         flash('No game score found in session.', 'warning')
-        # Redirect to home or mode selection perhaps?
         return redirect(url_for('mode')) 
 
-    # Calculate words found (score divided by points per word)
     points_per_word = 50 if mode_value == 'easy' else 100 if mode_value == 'normal' else 150
     words_found = 0
-    if points_per_word > 0: # Avoid division by zero
+    if points_per_word > 0:
          words_found = int(score_value / points_per_word)
     
-    # Save score to database automatically if it's higher than the user's best score
     existing_score = Score.query.filter_by(
         user_id=current_user.id,
         mode=mode_value
@@ -515,19 +497,17 @@ def leaderboard():
     leaderboards = {}
 
     for mode in modes:
-        # Get highest score per user for the current mode
         subquery = db.session.query(
             Score.user_id,
             func.max(Score.score).label('max_score')
         ).filter(Score.mode == mode).group_by(Score.user_id).subquery()
         
-        # Join with the Score and User tables
         top_scores = db.session.query(Score, User).\
             join(User, Score.user_id == User.id).\
             join(subquery, db.and_(
                 Score.user_id == subquery.c.user_id,
                 Score.score == subquery.c.max_score,
-                Score.mode == mode  # Ensure we only get scores for the correct mode
+                Score.mode == mode
             )).\
             order_by(Score.score.desc()).\
             limit(10).all()

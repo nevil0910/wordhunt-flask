@@ -1,14 +1,9 @@
-#!/bin/bash
-
-# Database setup script for Render deployment
-
 echo "Starting database setup..."
 
 # Get application directory
 APP_DIR=$(pwd)
 INSTANCE_DIR="${APP_DIR}/instance"
 
-# Create instance directory if it doesn't exist
 echo "Creating instance directory at ${INSTANCE_DIR}"
 mkdir -p "${INSTANCE_DIR}"
 
